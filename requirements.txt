@@ -1,0 +1,5 @@
+boto3==1.24.75
+python-dotenv==0.21.0
+
+# Arquivo na qual contém todas as dependências do projeto
+# Instale-o com: pip install -r requirements.txt
