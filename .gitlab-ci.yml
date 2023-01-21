@@ -8,8 +8,8 @@ stages:
   - fail
 
 variables:
-  PROJETO: gabryelziinnn/k3s-aws-python/dev
-  STACK: dev
+  PROJETO: 
+  STACK: 
 
 
 pulumi-preview:

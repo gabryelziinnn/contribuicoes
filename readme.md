@@ -14,3 +14,11 @@ This project is still on progress, any problem you see contact me please.
 In the k3s.yml playbook, the user chosen, is the ubuntu (which is the default for ubuntu machines), if you like to use another version of system, you need to define there, the default user for that system.
 
 You need to define all the fqdn variables and secrets, please read carefully all the vars/ folders and all.yml, from the main playbook.
+
+### To use the ***pipeline on GITLAB,*** you need to define 3 VARIABLES:
+
+PROJETO: insert here your project name
+
+STACK: insert here your stack name
+
+PULUMI_ACESS_TOKEN: insert on gitlab variables(secret), your pulumi token
