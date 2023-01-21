@@ -1,0 +1,50 @@
+---
+
+  - name: Cria o namespace do argocd
+    kubernetes.core.k8s:
+      name: argocd
+      api_version: v1
+      kind: Namespace
+      state: present
+      kubeconfig: /etc/rancher/k3s/k3s.yaml
+
+  - name: Instala o argocd no namespace criado
+    shell:
+      cmd: kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+  - name: Envia o manifesto de ingress do argocd
+    template:
+      src: "templates/argocd_frontend.yaml.j2"
+      dest: "{{ diretorio_temporario }}argocd_frontend.yaml"
+
+  - name: Instala o ingress do ArgoCD
+    shell:
+      cmd: kubectl apply -f argocd_frontend.yaml
+      chdir: "{{ diretorio_temporario }}"
+      warn: false
+    environment:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+  - name: Baixa a CLI do Argocd
+    shell:
+      cmd: curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+      chdir: "{{ diretorio_temporario }}"
+       
+  - name: Envia para o local dos binários
+    copy:
+      src: "{{ diretorio_temporario }}argocd-linux-amd64"
+      dest: "{{ local_argocd_cli }}argocd"
+      mode: u=rx,g=rx,o=rx 
+      remote_src: true
+
+  - name: Instala o argocd CLI
+    shell:
+      cmd: "install argocd-linux-amd64 {{ local_argocd_cli }}argocd"
+      chdir: "{{ diretorio_temporario }}"
+
+  - name: Remove o argocli nao utilizado
+    file:
+      path: "{{ diretorio_temporario }}argocd-linux-amd64"
+      state: absent
+
+...

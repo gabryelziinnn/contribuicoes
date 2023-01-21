@@ -1,0 +1,3 @@
+#!/bin/bash
+USER={{ user1 }}; PASSWORD={{ pw1 }}; echo '${USER}:$(openssl passwd -stdin -apr1 <<< ${PASSWORD})' >> auth
+USER={{ user2 }}; PASSWORD={{ pw2 }}; echo '${USER}:$(openssl passwd -stdin -apr1 <<< ${PASSWORD})' >> auth

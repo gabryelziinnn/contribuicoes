@@ -1,0 +1,2 @@
+local_kubectl: /usr/local/bin/
+hostname: K3S-MASTER

@@ -1,0 +1,73 @@
+---
+
+  - name: Cria um namespace do kubecost
+    kubernetes.core.k8s:
+      name: kubecost
+      api_version: v1
+      kind: Namespace
+      state: present
+      kubeconfig: /etc/rancher/k3s/k3s.yaml
+
+  - name: Adiciona o repositorio do kubecost
+    shell:
+      cmd: helm repo add kubecost https://kubecost.github.io/cost-analyzer/ && helm repo update
+      warn: false
+    environment:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+  - name: Remove arquivos antigos para não haver conflito (se houver)
+    file:
+      path: "{{ item }}" 
+      state: absent
+    with_items:
+      - "{{ diretorio_temporario }}values.yaml"
+      - "{{ diretorio_temporario }}auth"
+
+  - name: Envia o values correto
+    template:
+      src: "templates/values.yaml.j2"
+      dest: "{{ diretorio_temporario }}values.yaml"
+
+  - name: Envia o script de criação dos usuarios para acesso ao kubecost
+    template:
+      src: "templates/cria_usuarios.py.j2"
+      dest: "{{ diretorio_temporario }}cria_usuarios.py"
+      mode: u=rwx,g=rx,o=rx
+
+  - name: Executa o script de criação do arquivo AUTH
+    shell:
+      cmd: ./cria_usuarios.py
+      chdir: "{{ diretorio_temporario }}"
+
+  - name: Cria o secret dos usuários no kubecost baseado no script passado 
+    shell:
+      cmd: kubectl -n kubecost create secret generic kubecost-auth --from-file=auth
+      chdir: "{{ diretorio_temporario }}"      
+      warn: false
+
+  - name: Instala o KUBECOST
+    kubernetes.core.helm:
+      name: kubecost
+      chart_ref: kubecost/cost-analyzer
+      create_namespace: false
+      update_repo_cache: true
+      kubeconfig: /etc/rancher/k3s/k3s.yaml
+      release_namespace: kubecost
+      atomic: true
+      values_files:
+        - "{{ diretorio_temporario }}values.yaml"
+
+  - name: Envia o ingress para acesso ao sistema
+    template:
+      src: "templates/ingress.yaml.j2"
+      dest: "{{ diretorio_temporario }}ingress_kubecost.yaml"
+
+  - name: Aplica o ingress do kubecost
+    shell:
+      cmd: kubectl apply -f ingress_kubecost.yaml
+      chdir: "{{ diretorio_temporario }}"
+      warn: false
+    environment:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+...

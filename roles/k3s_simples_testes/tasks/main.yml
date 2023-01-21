@@ -1,0 +1,19 @@
+---
+
+  - name: Instala o K3S MASTER (removendo traefik)
+    shell:
+      cmd: curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --disable traefik" sh -
+    when: cloud == "aws" or cloud == "az"
+
+  - name: Instala o K3S 
+    shell:
+      cmd: curl -sfL https://get.k3s.io | sh - 
+    when: cloud == "do"
+
+  - name: Cria o link simbolico do K3S
+    file:
+      src: /usr/local/bin/k3s
+      dest: /usr/local/bin/kubectl
+      state: link
+
+...

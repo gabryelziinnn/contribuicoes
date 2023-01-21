@@ -1,0 +1,121 @@
+---
+
+  - name: Instala as dependencias do Longhorn
+    apt:
+      name: 
+        - jq
+        - nfs-common
+        - open-iscsi
+      state: latest
+
+  - name: Instala a dependencia do bcrypt
+    pip:
+      name: bcrypt
+      executable: pip
+      state: present
+
+  - name: Instala o LONGHORN
+    shell:
+      cmd: kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/master/deploy/longhorn.yaml
+      warn: false
+
+  - name: Remove arquivos antigos para não haver conflito (se houver)
+    file:
+      path: "{{ item }}" 
+      state: absent
+    with_items:
+      - "{{ diretorio_temporario }}values.yaml"
+      - "{{ diretorio_temporario }}auth"
+
+  - name: Envia o script de criação dos usuarios do auth
+    template:
+      src: "templates/cria_usuarios.py.j2"
+      dest: "{{ diretorio_temporario }}cria_usuarios.py"
+      mode: u=rwx,g=rx,o=rx
+
+  - name: Executa o script de criação do arquivo AUTH
+    shell:
+      cmd: ./cria_usuarios.py
+      chdir: "{{ diretorio_temporario }}"
+
+  - name: Cria o secret dos usuários baseada no script passado (Para o NGINX)
+    shell:
+      cmd: kubectl -n longhorn-system create secret generic basic-auth --from-file=auth
+      chdir: "{{ diretorio_temporario }}"      
+      warn: false
+    when: ingress_class == "nginx"
+
+  - name: Envia o manifesto de ingress do longhorn nginx
+    template:
+      src: "templates/longhorn_frontend_nginx.yaml.j2"
+      dest: "{{ diretorio_temporario }}longhorn_frontend_nginx.yaml"
+    when: ingress_class == "nginx"
+
+  - name: Aplica o frontend longhorn do NGINX
+    shell:
+      cmd: kubectl apply -f longhorn_frontend_nginx.yaml
+      chdir: "{{ diretorio_temporario }}"
+      warn: false
+    environment:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+    when: ingress_class == "nginx"
+
+  - name: Cria o secret dos usuários baseada no script passado (Para o TRAEFIK)
+    shell:
+      cmd: kubectl create secret generic -n longhorn-system auth --from-file=auth -o yaml --dry-run=client | tee auth-longhorn.yaml
+      chdir: "{{ diretorio_temporario }}"
+      warn: false
+    environment:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+    when: ingress_class == "traefik"
+
+  - name: Aplica o secret do traefik
+    shell:
+      cmd: kubectl apply -f auth-longhorn.yaml
+      chdir: "{{ diretorio_temporario }}"
+      warn: false
+    environment:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+    when: ingress_class == "traefik"
+
+  - name: Envia o manifesto de ingress do longhorn traefik
+    template:
+      src: "templates/longhorn_frontend_traefik.yaml.j2"
+      dest: "{{ diretorio_temporario }}longhorn_frontend_traefik.yaml"
+    when: ingress_class == "traefik"
+
+  - name: Envia os CRDs para o traefik
+    template:
+      src: "templates/auth_traefik.yaml.j2"
+      dest: "{{ diretorio_temporario }}auth_traefik.yaml"
+    when: ingress_class == "traefik"
+
+  - name: Aplica os manifestos de auth do traefik
+    shell:
+      cmd: kubectl apply -f auth_traefik.yaml
+      chdir: "{{ diretorio_temporario }}"
+      warn: false
+    environment:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+    when: ingress_class == "traefik"
+
+  - name: Aplica o frontend longhorn do TRAEFIK
+    shell:
+      cmd: kubectl apply -f longhorn_frontend_traefik.yaml
+      chdir: "{{ diretorio_temporario }}"
+      warn: false
+    environment:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+    when: ingress_class == "traefik"
+
+  - name: Envia o script de deleção da storage local
+    template:
+      src: "templates/remove_local.sh.j2"
+      dest: "{{ diretorio_temporario }}remove_local.sh"
+
+  - name: Realiza a deleção da storage local
+    shell:
+      cmd: "sh {{ diretorio_temporario }}remove_local.sh"
+    become: yes
+
+...

@@ -1,0 +1,44 @@
+---
+
+  - name: Cria o namespace do sonarqube
+    kubernetes.core.k8s:
+      name: sonar
+      api_version: v1
+      kind: Namespace
+      state: present
+      kubeconfig: /etc/rancher/k3s/k3s.yaml
+
+  - name: Cria o diretorio para receber os manifestos
+    file:
+      path: "{{ diretorio_temporario }}sonarqube"
+      state: directory
+      mode: u=rwx,g=r,o=r
+
+  - name: Envia os manifestos do sonarqube para o host
+    template:
+      src: "templates/{{ item }}"
+      dest: "{{ diretorio_temporario }}sonarqube"
+      mode: u=rwx,g=r,o=r
+    with_items:
+      - ingress.yaml.j2
+      - postgre.yaml.j2
+      - sonarqube.yaml.j2
+  
+  - name: Renomeia os manifestos
+    shell:
+      cmd: "mv {{ item }}.yaml.j2 {{ item }}.yaml"
+      chdir: "{{ diretorio_temporario }}sonarqube"
+    with_items:
+      - ingress
+      - postgre
+      - sonarqube
+
+  - name: Aplica os manifestos do sonarqube
+    shell:
+      cmd: kubectl apply -f sonarqube/
+      chdir: "{{ diretorio_temporario }}"
+      warn: false
+    environment:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+...

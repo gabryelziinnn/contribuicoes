@@ -1,0 +1,15 @@
+chave_secreta: letsencrypt
+diretorio_temporario: /tmp/
+
+# Insira aqui o IP primeira máquina que subiu o K3S MASTER
+IP_MASTER_PRINCIPAL: $EC2_MASTER
+
+# opcoes = traefik e nginx
+ingress_class: nginx
+
+# opcoes = aws, do e az
+cloud: aws
+
+# namespace a ser criado para o sistema
+sistema: um_sistema_qualquer
+SEGREDO_TOKEN: SECRET

@@ -1,0 +1,6 @@
+name: ec2_k3s_cluster_ansible
+runtime:
+  name: python
+  options:
+    virtualenv: venv
+description: Cluster k3s

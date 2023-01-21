@@ -1,0 +1,56 @@
+---
+
+  - name: Instala as dependencias necessárias
+    hosts: servidores
+    user: ubuntu
+    gather_facts: yes
+    vars:
+      ansible_python_interpreter: /usr/bin/python3
+    become: yes
+    roles:
+      - role: dependencias
+      - role: docker
+
+  - name: CRIA O MASTER PRIMÁRIO
+    hosts: MASTER
+    user: ubuntu
+    vars:
+      ansible_python_interpreter: /usr/bin/python3
+    become: yes
+    roles:
+      - role: k3s_master_install
+
+  - name: Ingressa MASTERS ao MASTER PRIMÁRIO
+    hosts: MASTERS_SECUNDARIOS
+    user: ubuntu
+    vars:
+      ansible_python_interpreter: /usr/bin/python3
+    become: yes
+    roles:
+      - role: join_master
+
+  - name: Instala os sistemas
+    hosts: MASTER
+    user: ubuntu
+    vars:
+      ansible_python_interpreter: /usr/bin/python3
+    become: yes
+    roles:
+      - role: longhorn
+      - role: argocd
+#      - role: sonarqube-helm
+      - role: sonarqube-yaml
+#      - role: sentry
+      - role: kubecost
+
+
+  - name: Ingressa os nodes ao master
+    hosts: NODES
+    user: ubuntu
+    vars:
+      ansible_python_interpreter: /usr/bin/python3
+    become: yes
+    roles:
+      - role: join_worker
+
+...

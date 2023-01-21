@@ -1,0 +1,36 @@
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: ingress-longhorn
+  namespace: longhorn-system
+spec:
+  basicAuth:
+    secret: auth
+    removeHeader: true
+...
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-longhorn
+  namespace: longhorn-system
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host('{{ fqdn_longhorn }}') && PathPrefix('/')
+      kind: Rule
+      middlewares:
+        - name: auth
+          namespace: longhorn-system
+      services:
+        - name: longhorn-frontend
+          port: 80
+  tls:
+    certResolver: {{ chave_secreta }}
+...
+
+# Crie o secret dessa forma
+#kubectl create secret generic -n longhorn-system auth-longhorn \
+#    --from-file=auth-string -o yaml --dry-run=client | tee auth-longhorn.yaml

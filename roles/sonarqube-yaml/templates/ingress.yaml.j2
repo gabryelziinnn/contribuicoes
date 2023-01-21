@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sonar
+  namespace: sonar
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: {{ chave_secreta }}
+spec:
+  rules:
+    - host: {{ fqdn }}
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: sonar-svc
+                port:
+                  number: 9000
+  tls: 
+  - hosts:
+    - {{ fqdn }}
+    secretName: sonarqube

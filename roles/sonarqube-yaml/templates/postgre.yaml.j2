@@ -1,0 +1,75 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: postgres-pvc
+  namespace: sonar
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres
+  namespace: sonar
+  labels:
+    app: postgres
+stringData:
+  POSTGRES_DB: "sonar_db"
+  POSTGRES_USER: "{{ user_banco_postgres }}"
+  POSTGRES_PASSWORD: "{{ pw_banco_postgres }}"
+  PGDATA: /var/lib/postgresql/data/sonarqube/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: sonar
+  labels:
+    app: postgres
+spec:
+  ports:
+  - port: 5432
+    name: postgres
+  selector:
+    app: postgres
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: sonar
+  labels:
+    app: postgres
+spec:
+  serviceName: postgre-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:12.10 
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 5432
+          envFrom:
+          - secretRef:
+              name: postgres
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data/dados
+              name: postgresdata
+      volumes:
+        - name: postgresdata
+          persistentVolumeClaim:
+            claimName: postgres-pvc

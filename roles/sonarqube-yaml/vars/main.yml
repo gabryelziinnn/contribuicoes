@@ -1,0 +1,7 @@
+---
+
+fqdn: seu_fqdn
+user_banco_postgres: admin
+pw_banco_postgres: facil123
+
+...

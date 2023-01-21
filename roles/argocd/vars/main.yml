@@ -1,0 +1,2 @@
+local_argocd_cli: /usr/local/bin/
+fqdn_argo: algum_fqdn

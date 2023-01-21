@@ -1,0 +1,14 @@
+#!/usr/bin/python3
+import bcrypt
+
+def encrypt_password(username, password):
+    bcrypted = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
+    return f"{username}:{bcrypted}"
+
+# Insira aqui o nome dos usuários e senha
+conteudo = [encrypt_password("{{ user1 }}", "{{ pw1 }}"),encrypt_password("{{ user2 }}", "{{ pw2 }}")]
+arquivo = open('auth','a') 
+
+for cada_linha in conteudo: 
+    arquivo.write(cada_linha + '\n')
+arquivo.close()

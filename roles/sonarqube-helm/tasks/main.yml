@@ -1,0 +1,58 @@
+---
+
+  - name: Cria o namespace do sonarqube
+    kubernetes.core.k8s:
+      name: sonarqube
+      api_version: v1
+      kind: Namespace
+      state: present
+      kubeconfig: /etc/rancher/k3s/k3s.yaml
+
+  - name: Cria o diretorio HELM do sonarqube
+    file:
+      path: "{{ diretorio_temporario }}"
+      state: directory
+      owner: root
+      group: root
+
+  - name: Envia o HELM do sonarqube para o host
+    copy:
+      src: "files/sonarqube.tar.bz2"
+      dest: "{{ diretorio_temporario }}"
+      mode: u=rwx,g=r,o=r
+
+  - name: Descompacta o HELM SONARQUBE no host
+    unarchive:
+      src: "{{ diretorio_temporario }}sonarqube.tar.bz2"
+      dest: "{{ diretorio_temporario }}"
+      remote_src: yes
+
+  - name: Remove o values antigo
+    file:
+      path:  "{{ diretorio_temporario }}sonarqube/values.yaml"
+      state: absent
+
+  - name: Envia o values correto
+    template:
+      src: "templates/values.yaml.j2"
+      dest: "{{ diretorio_temporario }}sonarqube/values.yaml"
+
+  - name: Adiciona o repositório do SONARQUBE
+    kubernetes.core.helm_repository:
+      name: sonarqube
+      repo_url: https://SonarSource.github.io/helm-chart-sonarqube
+    environment:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+  - name: Realiza o deployment do helm chart, na versao fixada=9.6.1
+    kubernetes.core.helm:
+      name: sonarqube
+      chart_ref: "{{ diretorio_temporario }}sonarqube"
+      release_namespace: sonarqube
+      chart_version: 9.6.1
+      kubeconfig: /etc/rancher/k3s/k3s.yaml
+      atomic: true
+      release_state: present
+      update_repo_cache: true
+
+...

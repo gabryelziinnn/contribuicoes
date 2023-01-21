@@ -1,0 +1,20 @@
+---
+
+  - name: Adquire o ip publico
+    shell:
+      cmd: curl ifconfig.me
+      chdir: "{{ diretorio_temporario }}"
+    register: ip
+
+  - name: Altera o nome do host baseado no ip público
+    hostname:
+      name: "node-{{ ip.stdout }}"
+      use: systemd
+
+  - name: Ingressa o NODE ao MASTER
+    shell:
+      cmd: curl -sfL https://get.k3s.io | K3S_URL=https://{{ IP_MASTER_PRINCIPAL }}:6443 K3S_TOKEN={{ SEGREDO_TOKEN }} sh -
+      chdir: "{{ diretorio_temporario }}"
+      warn: false
+
+...

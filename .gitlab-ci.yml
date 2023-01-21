@@ -1,0 +1,80 @@
+image: pulumi/pulumi-python
+
+stages:
+  - preview
+  - deploy_infra
+  - configura_cluster
+  - destroy
+  - fail
+
+variables:
+  PROJETO: gabryelziinnn/k3s-aws-python/dev
+  STACK: dev
+
+
+pulumi-preview:
+  stage: preview
+  tags:
+   - docker-runner
+  script:
+    - pulumi login
+    - pulumi stack select $STACK
+    - pulumi preview
+    - pulumi preview -d
+
+pulumi_deploy:
+  stage: deploy_infra
+  when: manual
+  tags:
+   - docker-runner
+  script:
+    - pulumi login
+    - pulumi stack select $STACK
+    - pulumi up -y
+    - echo "Infra criada"
+  artifacts:
+    paths:
+      - inventario
+      - pulumi-log.txt
+    expire_in: 1 week
+
+
+ansible_configure:
+  stage: configura_cluster
+  when: manual
+  image: alpinelinux/ansible
+  tags:
+   - docker-runner
+  script:
+    - echo "-------------------- Criação do Cluster --------------------------------"
+    - ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook \
+      -i inventario \
+      ./k3s.yml
+    - echo "-------------------- Cluster criado ------------------------------------"
+  dependencies:
+   - pulumi_deploy
+
+pulumi_destroy:
+  stage: destroy
+  when: manual
+  tags:
+   - docker-runner
+  script:
+    - pulumi login
+    - pulumi stack select $STACK
+    - pulumi destroy -y
+    - echo "Infraestrutura deletada"
+  artifacts:
+    paths:
+      - pulumi-log.txt
+    expire_in: 1 week
+
+destruir_recursos_na_falha:
+  stage: fail
+  when: on_failure
+  tags:
+   - docker-runner
+  script:
+    - pulumi login
+    - pulumi stack select $STACK
+    - pulumi destroy -y

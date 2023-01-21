@@ -1,0 +1,111 @@
+---
+
+  - name: Instala os pacotes iniciais
+    apt:
+      name: 
+        - htop
+        - curl
+        - git
+        - wget
+        - build-essential
+        - cargo
+      state: latest
+
+  - name: Instala o pip com rescue
+    block:
+      - name: Instala o PIP
+        apt: 
+          name: pip
+    rescue:
+      - name: Instala o PIP
+        apt: 
+          name: python-pip
+
+  - name: Instala as dependencias da ROLE com K8S
+    pip:
+      name: "{{ item }}"
+      executable: pip
+      state: present
+    with_items:
+      - openshift 
+      - pyyaml
+      - kubernetes
+
+  - name: Cria o grupo de deployment
+    group:
+      name: deployment
+      state: present
+      system: yes 
+
+  - name: Setar o hostname da máquina
+    hostname:
+      name: "{{ hostname }}"
+      use: systemd
+
+  - name: Criar usuario de deployment
+    user:
+      name: deployment
+      password: "{{ 'teste' | password_hash('sha512', 'mysecretsalt') }}"
+      groups: 
+        - deployment
+      state: present
+      shell: "/bin/bash"
+      system: yes
+      create_home: true
+      home: "/home/deployment"
+      comment: "usuario de producao"
+      generate_ssh_key: true
+
+  - name: Insere o usuario de deployment no SUDO
+    lineinfile:
+      dest: /etc/sudoers
+      state: present
+      regexp: '^%rgdeploy'
+      line: '%rgdeploy ALL=(ALL) ALL'
+      validate: 'visudo -cf %s'
+
+  - name: Copia minha chave pública para o servidor
+    copy:
+      src: "files/{{ item }}"
+      dest: "{{ diretorio_temporario }}"
+    with_items:
+      - id_rsa.pub
+
+  - name: Copia a chave para o arquivo de authorized keys
+    shell:
+      cmd: cat /tmp/id_rsa.pub > /home/deployment/.ssh/authorized_keys
+
+  - name: Instala latest KUBECTL
+    shell:
+      cmd: curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+      warn: false
+      chdir: "{{ diretorio_temporario }}"
+
+  - name: Envia o kubectl para o local dos binários
+    copy:
+      src: "{{ diretorio_temporario }}kubectl"
+      dest: "{{ local_kubectl }}kubectl"
+      mode: u=rwx,g=rx,o=rx 
+      remote_src: true
+
+  - name: Instala o kubectl
+    shell:
+      cmd: "install kubectl {{ local_kubectl }}kubectl"
+      chdir: "{{ diretorio_temporario }}"
+
+  - name: Remove o kubectl nao utilizado
+    file:
+      path: "{{ diretorio_temporario }}argocd-linux-amd64"
+      state: absent
+
+  - name: Remove o arquivo original do Kubectl
+    file:
+      path: /usr/local/bin/kubectl
+      state: absent
+
+  - name: Instala o HELM
+    shell:
+      cmd: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      warn: false
+
+...
