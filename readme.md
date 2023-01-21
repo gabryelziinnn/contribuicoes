@@ -1,4 +1,3 @@
-
 # CLUSTER HA K3S with pulumi and ansible (AWS)
 
 In this project i'm using gitlab-ci pipeline to deploy all the instances on AWS, and provision all the configuration required to deploy a cluster HA with K3S.
@@ -14,6 +13,8 @@ This project is still on progress, any problem you see contact me please.
 In the k3s.yml playbook, the user chosen, is the ubuntu (which is the default for ubuntu machines), if you like to use another version of system, you need to define there, the default user for that system.
 
 You need to define all the fqdn variables and secrets, please read carefully all the vars/ folders and all.yml, from the main playbook.
+
+On the function to create all the instances, you have to define your key_name = variaveis.nome_da_chave, of your aws existing key.
 
 ### To use the ***pipeline on GITLAB,*** you need to define 3 VARIABLES:
 
