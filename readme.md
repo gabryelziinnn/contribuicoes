@@ -23,3 +23,11 @@ PROJETO: insert here your project name
 STACK: insert here your stack name
 
 PULUMI_ACESS_TOKEN: insert on gitlab variables(secret), your pulumi token
+
+You also need to export 2 credentials from AWS which is:
+
+AWS_ACCESS_KEY_ID
+
+AWS_SECRET_ACCESS_KEY
+
+(which is capable of creating EC2 instances and all of requirements to use it online, like subnets, ig, and so on)
