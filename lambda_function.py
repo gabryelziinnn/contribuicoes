@@ -7,7 +7,7 @@ def lambda_handler(event, context):
     try:
         for result in VALIDACOES:
             if result['valid']:
-                print(f"Os certificados: {result['url']} são válidos por mais de 30 dias.")
+                print(f"Os certificados: {result['url']} são válidos por 11 dias ou mais dias.")
             elif not result['valid'] and result['days_left'] == 10:
                 webhook_cert.enviar_email(f'Os certificados: https://{result["url"]} somente serão válidos por: {result["days_left"]}, renove-os!','Expiração de certificados')
                 webhook_cert.discord_mensagem(f'O certificado: https://{result["url"]} somente é válido por {result["days_left"]}','Certificado acabando a validade!','Atenção para renovação dos certificados!')
