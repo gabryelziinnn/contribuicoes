@@ -1,0 +1,5 @@
+pulumi>=3.0.0,<4.0.0
+pulumi-aws>=5.0.0,<6.0.0
+discord_webhook==1.0.0
+python-dotenv==0.21.0
+pytz==2022.7.1
