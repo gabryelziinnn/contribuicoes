@@ -1,0 +1,2 @@
+config:
+  aws:region: *insert_your_region_here*

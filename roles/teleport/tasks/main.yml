@@ -1,0 +1,20 @@
+---
+
+  - name: Adiciona o repositório do teleport
+    shell:
+      cmd: helm repo add teleport https://charts.releases.teleport.dev && helm repo update
+
+  - name: Instala o TELEPORT
+    kubernetes.core.helm:
+      name: teleport-cluster
+      chart_ref: teleport/teleport-cluster
+      release_namespace: teleport-cluster
+      kubeconfig: /etc/rancher/k3s/k3s.yaml
+      atomic: true
+      release_state: present
+      update_repo_cache: true
+      create_namespace: true
+      values:
+        clusterName: "{{ fqdn }}"
+
+...

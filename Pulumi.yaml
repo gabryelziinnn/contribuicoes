@@ -1,0 +1,6 @@
+name: teleport-aws
+runtime:
+  name: python
+  options:
+    virtualenv: venv
+description: teleport na AWS com ASG
