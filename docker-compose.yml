@@ -1,0 +1,17 @@
+services:
+  nmap:
+    container_name: nmap_finder
+    build:
+      dockerfile: ./nmap.dockerfile
+      context: ./
+    user: root
+    env_file:
+      - .env
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+
+networks:
+  nmap:
+    name: rede
+    driver: bridge
