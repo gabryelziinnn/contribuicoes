@@ -1,0 +1,6 @@
+name: eks-cluster-mod
+runtime:
+  name: python
+  options:
+    virtualenv: venv
+description: Eks cluster with module

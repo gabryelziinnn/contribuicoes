@@ -1,0 +1,9 @@
+config:
+  aws:region: us-west-1
+  cluster-eks-module:deployDashboard: "false"
+  cluster-eks-module:desiredCapacity: "2"
+  cluster-eks-module:instanceType: t3.xlarge
+  cluster-eks-module:maxSize: "2"
+  cluster-eks-module:minSize: "1"
+  cluster-eks-module:storageClass: gp3
+  eks-cluster-mod:availability-zones: '[us-west-1a,us-west-1c]'
