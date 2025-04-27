@@ -1,0 +1,59 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: canary-gateway
+spec:
+  selector:
+    istio: ingressgateway 
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "labgab.local"
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: myapp-destination
+spec:
+  host: myapp.teste.svc.cluster.local # APONTA PARA UM UNICO SERVICE
+  subsets:
+  - name: v1 # NOME DESTE SUBSET
+    labels:
+      version: v1 # REALIZA A DIVISÃO DAS APLICACOES BASEADAS NA LABEL DIFERENTE ENTRE OS DEPLOYMENTS
+  - name: v2 # NOME DESTE SUBSET
+    labels:
+      version: v2 # REALIZA A DIVISÃO DAS APLICACOES BASEADAS NA LABEL DIFERENTE ENTRE OS DEPLOYMENTS
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: canary-vs
+spec:
+  hosts:
+  - "labgab.local"
+  gateways:
+  - canary-gateway
+  http:
+  - match:
+    - uri:
+        exact: /themes/
+    - uri:
+        prefix: /quote/
+    - uri:
+        exact: /home/
+    route:
+    - destination:
+        host: myapp.teste.svc.cluster.local # ENVIA PARA O MESMO SERVICE
+        subset: v1 # PORÉM DIFERE ATRAVÉS DO SUBSET
+        port:
+          number: 8000
+      weight: 95  # PORCENTAGEM DO ENVIO DE TRÁFEGO PARA ESTE SUBSET
+    - destination:
+        host: myapp.teste.svc.cluster.local # ENVIA PARA O MESMO SERVICE
+        subset: v2 # PORÉM DIFERE ATRAVÉS DO SUBSET
+        port:
+          number: 8000
+      weight: 5  # PORCENTAGEM DO ENVIO DE TRÁFEGO PARA ESTE SUBSET

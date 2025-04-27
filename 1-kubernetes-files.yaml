@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp 
+spec:
+  ports:
+  - port: 8000
+    name: http
+  selector:
+    app: myapp # Define um só serviço para ambos os deployments
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: myapp-account
+  labels:
+    account: myapp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-v1
+spec:
+  replicas: 5 # VEJA QUE A QUANTIDADE DE RÉPLICAS É DIFERENTE (NÃO É POR ELA QUE CONTROLAMOS O CANARY)
+  selector:
+    matchLabels:
+      app: myapp # LABEL IGUAL PARA SER UTILIZADO PELO MESMO SERVICE
+      version: v1 # LABEL DIFERENTE PARA SER UTILIZADO NO DESTINATIONRULE
+  template:
+    metadata:
+      labels:
+        app: myapp # LABEL IGUAL PARA SER UTILIZADO PELO MESMO SERVICE
+        version: v1 # LABEL DIFERENTE PARA SER UTILIZADO NO DESTINATIONRULE
+    spec:
+      serviceAccountName: myapp-account
+      containers:
+      - name: myapp
+        image: docker.io/khabdrick/quotes:v1
+        resources:
+          requests:
+            cpu: "100m" 
+            memory: "256Mi" 
+          limits:
+            cpu: "200m" 
+            memory: "512Mi"  
+        ports:
+        - containerPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-v2
+spec:
+  replicas: 1 # VEJA QUE A QUANTIDADE DE RÉPLICAS É DIFERENTE (NÃO É POR ELA QUE CONTROLAMOS O CANARY)
+  selector:
+    matchLabels:
+      app: myapp # LABEL IGUAL PARA SER UTILIZADO PELO MESMO SERVICE
+      version: v2 # LABEL DIFERENTE PARA SER UTILIZADO NO DESTINATIONRULE
+  template:
+    metadata:
+      labels:
+        app: myapp # LABEL IGUAL PARA SER UTILIZADO PELO MESMO SERVICE
+        version: v2 # LABEL DIFERENTE PARA SER UTILIZADO NO DESTINATIONRULE
+    spec:
+      containers:
+      - name: myapp
+        image: docker.io/khabdrick/quotes:v2
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"  
+          limits:
+            cpu: "200m"  
+            memory: "512Mi"
+        ports:
+        - containerPort: 8000
